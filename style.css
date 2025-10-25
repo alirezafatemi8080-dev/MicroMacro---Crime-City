@@ -1,0 +1,159 @@
+:root {
+  --bg-day: #fff;
+  --fg-day: #000;
+  --bg-night: #000;
+  --fg-night: #fff;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: sans-serif;
+}
+
+#app.day-theme {
+  background: var(--bg-day);
+  color: var(--fg-day);
+}
+#app.night-theme {
+  background: var(--bg-night);
+  color: var(--fg-night);
+}
+
+.ui-btn {
+  position: fixed;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 24px;
+  background: transparent;
+  border: 2px solid currentColor;
+  z-index: 10;
+}
+.ui-gear { top: 10px; left: 10px; }
+.ui-eraser { top: 10px; right: 10px; }
+.ui-case { bottom: 10px; left: 50%; transform: translateX(-50%); }
+
+#viewport {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+#mapImage {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  transform-origin: center;
+  max-width: none;
+}
+#app.night-theme #mapImage {
+  filter: invert(1) hue-rotate(180deg);
+}
+#markerCanvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#dim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 20;
+}
+#dim.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.popup {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: inherit;
+  color: inherit;
+  border: 2px solid currentColor;
+  border-radius: 12px;
+  padding: 16px;
+  z-index: 30;
+  display: none;
+}
+.popup.open {
+  display: block;
+}
+.popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 20px;
+  background: transparent;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  color: inherit;
+}
+.popup-body {
+  margin-top: 48px;
+}
+.popup-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+button[data-action] {
+  padding: 8px 16px;
+  border: 2px solid currentColor;
+  background: transparent;
+  border-radius: 8px;
+}
+
+.segmented {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.seg-btn {
+  padding: 6px 12px;
+  border: 2px solid currentColor;
+  background: transparent;
+  border-radius: 8px;
+}
+.seg-btn.active {
+  background: currentColor;
+  color: var(--bg-day);
+}
+
+.color-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.color-chip {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+}
+.color-chip.active {
+  outline: 2px dashed currentColor;
+}
+
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.case-item {
+  padding: 8px;
+  border: 2px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+}

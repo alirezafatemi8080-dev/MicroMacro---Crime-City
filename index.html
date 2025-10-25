@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>مپ دودلی</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app" class="day-theme">
+    <button id="btn-settings" class="ui-btn ui-gear" title="تنظیمات">⚙️</button>
+    <button id="btn-eraser" class="ui-btn ui-eraser" title="پاک‌کن">🧽</button>
+    <button id="btn-case" class="ui-btn ui-case" title="کیس">📁</button>
+
+    <div id="viewport">
+      <img id="mapImage" src="map.jpg" alt="MAP" />
+      <canvas id="markerCanvas"></canvas>
+    </div>
+
+    <div id="dim"></div>
+
+    <div id="popup-eraser" class="popup">
+      <button class="popup-close">×</button>
+      <div class="popup-body">
+        <p>تمام نشان‌ها پاک شوند؟</p>
+        <div class="popup-actions">
+          <button data-action="cancel">نه</button>
+          <button data-action="confirm">آره</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="popup-settings" class="popup">
+      <button class="popup-close">×</button>
+      <div class="popup-body">
+        <label>حالت نمایش</label>
+        <div class="segmented">
+          <button class="seg-btn" data-theme="day">روز</button>
+          <button class="seg-btn" data-theme="night">شب</button>
+        </div>
+        <label>رنگ نشان‌ها</label>
+        <div id="colorRow" class="color-row">
+          <button class="color-chip" data-color="#e53935"></button>
+          <button class="color-chip" data-color="#fb8c00"></button>
+          <button class="color-chip" data-color="#fdd835"></button>
+          <button class="color-chip" data-color="#43a047"></button>
+          <button class="color-chip" data-color="#1e88e5"></button>
+          <button class="color-chip" data-color="#8e24aa"></button>
+          <button class="color-chip" data-color="#e91e63"></button>
+        </div>
+      </div>
+    </div>
+
+    <div id="popup-case" class="popup">
+      <button class="popup-close">×</button>
+      <div class="popup-body">
+        <div class="case-grid">
+          <button class="case-item">سرگرمی</button>
+          <button class="case-item">ماشین</button>
+          <button class="case-item">پختن</button>
+          <button class="case-item">ورزش</button>
+          <button class="case-item">کتاب</button>
+          <button class="case-item">طبیعت</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
