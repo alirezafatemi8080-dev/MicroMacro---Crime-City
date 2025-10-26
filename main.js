@@ -235,6 +235,178 @@ document.addEventListener('keydown', e => {
 });
 
 // Initial transform
+updateTransform();// Popup close buttons and dim
+document.querySelectorAll('.popup-close').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = btn.closest('.popup');
+    closePopup(p);
+  });
+});
+dim.addEventListener('click', () => {
+  [popupSettings, popupEraser, popupCase].forEach(p => p.classList.remove('open'));
+  dim.classList.remove('open');
+});
+
+// Eraser actions
+popupEraser.querySelector('[data-action="cancel"]').addEventListener('click', () => closePopup(popupEraser));
+popupEraser.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+  markers = [];
+  drawMarkers();
+  closePopup(popupEraser);
+});
+
+// Theme segmented control
+function setTheme(theme) {
+  app.classList.toggle('day-theme', theme === 'day');
+  app.classList.toggle('night-theme', theme === 'night');
+  segBtns.forEach(b => b.classList.toggle('active', b.dataset.theme === theme));
+  drawMarkers(); // refresh marker outlines for contrast
+}
+segBtns.forEach(b => {
+  b.addEventListener('click', () => setTheme(b.dataset.theme));
+});
+// default day
+setTheme('day');
+
+// Color chips
+function setMarkerColor(hex) {
+  markerColor = hex;
+  colorChips.forEach(c => c.classList.toggle('active', c.dataset.color === hex));
+  drawMarkers();
+}
+colorChips.forEach(c => {
+  c.style.color = c.dataset.color;
+  c.addEventListener('click', () => setMarkerColor(c.dataset.color));
+});
+setMarkerColor('#e53935');
+
+// Gesture state
+let scale = 1;
+let posX = 0, posY = 0;
+const minScale = 0.5;
+const maxScale = 4.0;
+
+let pointers = new Map(); // id -> {x,y}
+let lastMid = null;
+let base = { scale: 1, posX: 0, posY: 0 }; // snapshot at gesture start
+
+function updateTransform() {
+  mapContainer.style.transform =
+    `translate(-50%, -50%) translate(${posX}px, ${posY}px) scale(${scale})`;
+}
+
+// Utilities
+function getDistance(a, b) {
+  const dx = a.x - b.x, dy = a.y - b.y;
+  return Math.hypot(dx, dy);
+}
+function getMidpoint(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+// Pointer events for touch + mouse
+viewport.addEventListener('pointerdown', (e) => {
+  viewport.setPointerCapture?.(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (pointers.size === 1) {
+    // Start pan
+    base.posX = posX;
+    base.posY = posY;
+    base.start = { x: e.clientX, y: e.clientY };
+  } else if (pointers.size === 2) {
+    // Start pinch
+    const [p1, p2] = [...pointers.values()];
+    base.scale = scale;
+    base.dist = getDistance(p1, p2);
+    lastMid = getMidpoint(p1, p2);
+    base.posX = posX;
+    base.posY = posY;
+  }
+
+  e.preventDefault();
+});
+
+viewport.addEventListener('pointermove', (e) => {
+  if (!pointers.has(e.pointerId)) return;
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+  if (pointers.size === 1) {
+    const p = [...pointers.values()][0];
+    const dx = p.x - base.start.x;
+    const dy = p.y - base.start.y;
+    posX = base.posX + dx;
+    posY = base.posY + dy;
+    updateTransform();
+  } else if (pointers.size === 2) {
+    const [p1, p2] = [...pointers.values()];
+    const dist = getDistance(p1, p2);
+    const mid = getMidpoint(p1, p2);
+
+    // Scale relative to start pinch
+    let nextScale = base.scale * (dist / base.dist);
+    nextScale = Math.max(minScale, Math.min(maxScale, nextScale));
+
+    // Keep midpoint under fingers by adjusting translation
+    // Move pos by delta of midpoint (screen space), damped by scale
+    const mdx = mid.x - lastMid.x;
+    const mdy = mid.y - lastMid.y;
+
+    scale = nextScale;
+    posX = base.posX + mdx;
+    posY = base.posY + mdy;
+
+    updateTransform();
+    lastMid = mid;
+  }
+
+  e.preventDefault();
+});
+
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (pointers.size === 0) {
+    lastMid = null;
+  }
+}
+viewport.addEventListener('pointerup', endPointer);
+viewport.addEventListener('pointercancel', endPointer);
+viewport.addEventListener('pointerleave', endPointer);
+
+// Double-tap to reset view
+let lastTap = 0;
+viewport.addEventListener('pointerdown', (e) => {
+  const now = Date.now();
+  if (now - lastTap < 250) {
+    scale = 1; posX = 0; posY = 0; updateTransform();
+  }
+  lastTap = now;
+}, { passive: true });
+
+// Add marker on long-press (600ms)
+let pressTimer = null;
+viewport.addEventListener('pointerdown', (e) => {
+  // ignore when two fingers (pinch)
+  if (pointers.size > 1) return;
+  clearTimeout(pressTimer);
+  const startX = e.clientX, startY = e.clientY;
+  pressTimer = setTimeout(() => {
+    // Add marker at screen coordinates
+    markers.push({ x: startX, y: startY });
+    drawMarkers();
+  }, 600);
+});
+viewport.addEventListener('pointerup', () => clearTimeout(pressTimer));
+viewport.addEventListener('pointercancel', () => clearTimeout(pressTimer));
+viewport.addEventListener('pointermove', () => clearTimeout(pressTimer));
+
+// Keyboard zoom (optional on desktop)
+document.addEventListener('keydown', e => {
+  if (e.key === '+' || e.key === '=') { scale = Math.min(maxScale, scale * 1.1); updateTransform(); }
+  if (e.key === '-' || e.key === '_') { scale = Math.max(minScale, scale / 1.1); updateTransform(); }
+});
+
+// Initial transform
 updateTransform();  };
 
   const LS_KEY = 'doodleMapState.final.v1';
