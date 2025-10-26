@@ -1,0 +1,5 @@
+name = "micro-macro-crime-city"
+main = "index.html"
+compatibility_date = "2025-10-26"
+
+send_metrics = true
