@@ -180,4 +180,121 @@ body { font-family: "DoodleSans", "Segoe UI", system-ui, sans-serif; }
 .case-item:active { transform: translateY(var(--press-depth)); box-shadow: none; }
 
 /* Focus visibility */
+button:focus-visible { outline: 2px dashed currentColor; }/* Individual tiles */
+.map-tile {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-width: none;
+}
+
+/* Night mode inverts map only, UI remains readable */
+#app.night-theme #mapContainer { filter: invert(1) hue-rotate(180deg); }
+
+/* Marker canvas overlays entire viewport */
+#markerCanvas { position: absolute; inset: 0; pointer-events: none; }
+
+/* Dim overlay */
+#dim {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(2px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 150ms ease;
+  z-index: 20;
+}
+#dim.open { opacity: 1; pointer-events: auto; }
+
+/* Popups */
+.popup {
+  position: fixed;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  min-width: min(560px, 92vw);
+  max-width: 92vw;
+  border-radius: var(--radius-ui);
+  border: var(--ui-line) solid currentColor;
+  background: inherit; color: inherit;
+  padding: 16px;
+  z-index: 30;
+  box-shadow: var(--shadow-day);
+  display: none;
+}
+#app.night-theme .popup { box-shadow: var(--shadow-night); }
+.popup.open { display: block; }
+
+/* Close button with extra breathing space below it */
+.popup-close {
+  position: absolute; right: 10px; top: 8px;
+  background: transparent;
+  border: var(--ui-line) solid currentColor;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  line-height: 30px; text-align: center; font-size: 16px;
+  box-shadow: var(--shadow-day);
+}
+#app.night-theme .popup-close { box-shadow: var(--shadow-night); }
+.popup-close:active { transform: translateY(var(--press-depth)); box-shadow: none; }
+
+/* Add spacing between close button and popup content */
+.popup .popup-body { margin-top: 44px; }
+
+.popup-question { margin: 12px 0 16px; }
+.popup-actions { display: flex; gap: 12px; }
+.btn-flat {
+  border: var(--ui-line) solid currentColor;
+  border-radius: var(--radius-ui);
+  background: transparent;
+  padding: 8px 16px;
+  box-shadow: var(--shadow-day);
+  color: inherit;
+}
+#app.night-theme .btn-flat { box-shadow: var(--shadow-night); }
+.btn-flat:active { transform: translateY(var(--press-depth)); box-shadow: none; }
+
+/* Settings */
+.settings-group { margin-bottom: 16px; }
+.settings-label { display: block; margin-bottom: 8px; }
+
+.segmented { display: inline-flex; gap: 8px; }
+.seg-btn {
+  border: var(--ui-line) solid currentColor;
+  border-radius: var(--radius-ui);
+  padding: 8px 14px;
+  background: transparent;
+  box-shadow: var(--shadow-day);
+  color: inherit;
+}
+#app.night-theme .seg-btn { box-shadow: var(--shadow-night); }
+.seg-btn.active { outline: 2px dashed currentColor; }
+.seg-btn:active { transform: translateY(var(--press-depth)); box-shadow: none; }
+
+.color-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.color-chip {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: var(--ui-line) solid currentColor;
+  box-shadow: var(--shadow-day);
+  background: var(--bg-day);
+  position: relative;
+}
+#app.night-theme .color-chip { background: var(--bg-night); box-shadow: var(--shadow-night); }
+.color-chip::after {
+  content: ""; position: absolute; inset: 4px; border-radius: 50%;
+  background: currentColor; opacity: 0.95;
+}
+.color-chip.active { outline: 3px dashed currentColor; }
+
+/* CASE grid: ensure visibility in night mode */
+.case-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.case-item {
+  border: var(--ui-line) solid currentColor;
+  border-radius: var(--radius-ui);
+  background: transparent; color: inherit;
+  padding: 10px; text-align: center;
+  box-shadow: var(--shadow-day);
+}
+#app.night-theme .case-item { box-shadow: var(--shadow-night); }
+.case-item:active { transform: translateY(var(--press-depth)); box-shadow: none; }
+
+/* Focus visibility */
 button:focus-visible { outline: 2px dashed currentColor; }
