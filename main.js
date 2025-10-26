@@ -1,29 +1,58 @@
+/* Doodle Map App: full-fit initial view, smooth zoom/pan, constant-size markers,
+   icon-only controls, popup UX with spacing, night/day themes, persistence. */
+
 (() => {
-  const app = document.getElementById('app');
+  const appEl = document.getElementById('app');
+  const viewport = document.getElementById('viewport');
   const mapImage = document.getElementById('mapImage');
   const canvas = document.getElementById('markerCanvas');
   const ctx = canvas.getContext('2d');
+
   const dim = document.getElementById('dim');
   const popupEraser = document.getElementById('popup-eraser');
   const popupSettings = document.getElementById('popup-settings');
   const popupCase = document.getElementById('popup-case');
 
+  const btnSettings = document.getElementById('btn-settings');
+  const btnEraser = document.getElementById('btn-eraser');
+  const btnCase = document.getElementById('btn-case');
+
+  const segButtons = document.querySelectorAll('.seg-btn');
+  const colorChips = document.querySelectorAll('.color-chip');
+
+  // State
   const state = {
     theme: 'day',
     color: '#e53935',
     scale: 1,
-    minScale: 1,
+    minScale: 1, // computed from image+viewport
     maxScale: 5,
     translation: { x: 0, y: 0 },
-    markers: [],
-    pointerCache: new Map(),
-    isPinching: false,
-    pinch: {},
+    markers: [], // [{xMap, yMap, color, jitterSeed}]
     lastTap: { time: 0, x: 0, y: 0 },
-    imgNatural: { w: 0, h: 0 }
+    isPinching: false,
+    pinch: { startDist: 0, startScale: 1, center: { x: 0, y: 0 } },
+    pointerCache: new Map(),
+    imgNatural: { w: 0, h: 0 },
   };
 
-  const LS_KEY = 'doodleMapState';
+  const LS_KEY = 'doodleMapState.final.v1';
+
+  // Persistence
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      Object.assign(state, {
+        theme: saved.theme ?? state.theme,
+        color: saved.color ?? state.color,
+        scale: saved.scale ?? state.scale,
+        translation: saved.translation ?? state.translation,
+        markers: saved.markers ?? state.markers,
+      });
+    } catch (e) {}
+  }
 
   function saveState() {
     localStorage.setItem(LS_KEY, JSON.stringify({
@@ -31,39 +60,249 @@
       color: state.color,
       scale: state.scale,
       translation: state.translation,
-      markers: state.markers
+      markers: state.markers,
     }));
   }
 
-  function loadState() {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return;
-    const saved = JSON.parse(raw);
-    Object.assign(state, saved);
-  }
-
+  // Canvas sizing
   function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.width = viewport.clientWidth;
+    canvas.height = viewport.clientHeight;
     redrawMarkers();
   }
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    computeFitScale();
+    clampScaleToBounds();
+    applyTransform();
+  });
 
+  // Fit scale to show entire image centered
   function computeFitScale() {
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
+    if (!state.imgNatural.w || !state.imgNatural.h) return;
+    const vw = viewport.clientWidth;
+    const vh = viewport.clientHeight;
     const sw = vw / state.imgNatural.w;
     const sh = vh / state.imgNatural.h;
     state.minScale = Math.min(sw, sh);
   }
+  function clampScaleToBounds() {
+    state.scale = Math.max(state.minScale, Math.min(state.scale, state.maxScale));
+  }
 
+  // Transform application
   function applyTransform() {
     const { x, y } = state.translation;
-    mapImage.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${state.scale})`;
+    const s = state.scale;
+    mapImage.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${s})`;
     redrawMarkers();
     saveState();
   }
 
-  function screenToMapCoords(x, y) {
+  // Coordinate conversions
+  function screenToMapCoords(clientX, clientY) {
+    const rect = viewport.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const xMap = (clientX - cx - state.translation.x) / state.scale;
+    const yMap = (clientY - cy - state.translation.y) / state.scale;
+    return { xMap, yMap };
+  }
+  function mapToScreenCoords(xMap, yMap) {
+    const rect = viewport.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const x = cx + state.translation.x + xMap * state.scale;
+    const y = cy + state.translation.y + yMap * state.scale;
+    return { x, y };
+  }
+
+  // Markers: constant screen size (never change with zoom)
+  const MARKER_RADIUS_PX = 10;
+  function drawMarker(m) {
+    const { x, y } = mapToScreenCoords(m.xMap, m.yMap);
+    const r = MARKER_RADIUS_PX;
+    const points = 64;
+    const jitter = 0.12;
+    const seed = m.jitterSeed || 0;
+    ctx.save();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = m.color;
+    ctx.beginPath();
+    for (let i = 0; i <= points; i++) {
+      const t = (i / points) * Math.PI * 2;
+      const wobble = (Math.sin(t * 3.1 + seed) + Math.cos(t * 2.7 + seed * 0.7)) * jitter * r;
+      const px = x + Math.cos(t) * r + wobble;
+      const py = y + Math.sin(t) * r + wobble;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+  function redrawMarkers() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const m of state.markers) drawMarker(m);
+  }
+
+  // Double-tap for add/remove markers
+  const DOUBLE_TAP_MS = 280;
+  const DOUBLE_TAP_DIST = 32;
+  function maybeHandleDoubleTap(e) {
+    const now = performance.now();
+    const x = e.clientX, y = e.clientY;
+    if (state.isPinching || state.pointerCache.size > 1) return;
+    if (now - state.lastTap.time < DOUBLE_TAP_MS) {
+      if (Math.hypot(x - state.lastTap.x, y - state.lastTap.y) < DOUBLE_TAP_DIST) {
+        toggleMarkerAt(e);
+        state.lastTap.time = 0;
+        return;
+      }
+    }
+    state.lastTap = { time: now, x, y };
+  }
+  function vibrateSoft() { try { navigator.vibrate(12); } catch (e) {} }
+  function toggleMarkerAt(e) {
+    const { xMap, yMap } = screenToMapCoords(e.clientX, e.clientY);
+    const tol = 12 / state.scale;
+    const idx = state.markers.findIndex(m => Math.hypot(m.xMap - xMap, m.yMap - yMap) <= tol);
+    if (idx >= 0) {
+      state.markers.splice(idx, 1);
+    } else {
+      state.markers.push({ xMap, yMap, color: state.color, jitterSeed: Math.random() * 1000 });
+    }
+    vibrateSoft();
+    applyTransform();
+  }
+
+  // Gestures: pan + pinch-zoom
+  viewport.addEventListener('pointerdown', (e) => {
+    viewport.setPointerCapture(e.pointerId);
+    state.pointerCache.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  });
+  viewport.addEventListener('pointermove', (e) => {
+    const prev = state.pointerCache.get(e.pointerId);
+    if (!prev) return;
+    state.pointerCache.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (state.pointerCache.size === 2) {
+      const [p1, p2] = Array.from(state.pointerCache.values());
+      const dist = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+      if (!state.isPinching) {
+        state.isPinching = true;
+        state.pinch.startDist = dist;
+        state.pinch.startScale = state.scale;
+        state.pinch.center = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      } else {
+        const factor = dist / state.pinch.startDist;
+        const newScale = Math.max(state.minScale, Math.min(state.pinch.startScale * factor, state.maxScale));
+
+        // Keep pinch center anchored
+        const before = screenToMapCoords(state.pinch.center.x, state.pinch.center.y);
+        state.scale = newScale;
+        const after = screenToMapCoords(state.pinch.center.x, state.pinch.center.y);
+        state.translation.x += (after.xMap - before.xMap) * state.scale;
+        state.translation.y += (after.yMap - before.yMap) * state.scale;
+
+        applyTransform();
+      }
+    } else if (state.pointerCache.size === 1 && !state.isPinching) {
+      const dx = e.clientX - prev.x;
+      const dy = e.clientY - prev.y;
+      state.translation.x += dx;
+      state.translation.y += dy;
+      applyTransform();
+    }
+  });
+  viewport.addEventListener('pointerup', (e) => {
+    viewport.releasePointerCapture(e.pointerId);
+    state.pointerCache.delete(e.pointerId);
+    if (state.pointerCache.size < 2) state.isPinching = false;
+    maybeHandleDoubleTap(e);
+  });
+  viewport.addEventListener('pointercancel', (e) => {
+    viewport.releasePointerCapture(e.pointerId);
+    state.pointerCache.delete(e.pointerId);
+    if (state.pointerCache.size < 2) state.isPinching = false;
+  });
+  viewport.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+
+  // Popups
+  function openPopup(el) { dim.classList.add('open'); el.classList.add('open'); }
+  function closePopups() {
+    dim.classList.remove('open');
+    popupEraser.classList.remove('open');
+    popupSettings.classList.remove('open');
+    popupCase.classList.remove('open');
+  }
+  btnSettings.addEventListener('click', () => openPopup(popupSettings));
+  btnEraser.addEventListener('click', () => openPopup(popupEraser));
+  btnCase.addEventListener('click', () => openPopup(popupCase));
+  dim.addEventListener('click', closePopups);
+  document.querySelectorAll('.popup-close').forEach(b => b.addEventListener('click', closePopups));
+  popupEraser.querySelector('[data-action="confirm"]').addEventListener('click', () => {
+    state.markers = [];
+    vibrateSoft();
+    applyTransform();
+    closePopups();
+  });
+  popupEraser.querySelector('[data-action="cancel"]').addEventListener('click', closePopups);
+
+  // Settings: theme + color
+  function applyTheme(theme) {
+    state.theme = theme;
+    appEl.classList.toggle('day-theme', theme === 'day');
+    appEl.classList.toggle('night-theme', theme === 'night');
+    segButtons.forEach(s => s.classList.toggle('active', s.dataset.theme === theme));
+    saveState();
+  }
+  segButtons.forEach(b => {
+    b.addEventListener('click', () => applyTheme(b.dataset.theme));
+  });
+  function selectColor(hex) {
+    state.color = hex;
+    colorChips.forEach(c => c.classList.toggle('active', c.dataset.color === hex));
+    saveState();
+  }
+  colorChips.forEach(c => {
+    c.style.color = c.dataset.color;
+    c.addEventListener('click', () => selectColor(c.dataset.color));
+  });
+
+  // Init: ensure first load is full-fit centered, not zoomed in
+  function init() {
+    loadState();
+    mapImage.addEventListener('load', () => {
+      state.imgNatural.w = mapImage.naturalWidth || mapImage.width;
+      state.imgNatural.h = mapImage.naturalHeight || mapImage.height;
+
+      computeFitScale();
+
+      // First-time load => full-fit centered
+      if (!localStorage.getItem(LS_KEY)) {
+        state.scale = state.minScale;
+        state.translation = { x: 0, y: 0 };
+      } else {
+        clampScaleToBounds();
+      }
+
+      resizeCanvas();
+      applyTheme(state.theme);
+      applyTransform();
+
+      registerSW();
+    });
+    if (mapImage.complete) mapImage.dispatchEvent(new Event('load'));
+  }
+
+  // PWA
+  function registerSW() {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  }
+
+  init();
+})();  function screenToMapCoords(x, y) {
     const cx = window.innerWidth / 2;
     const cy = window.innerHeight / 2;
     return {
