@@ -5,65 +5,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#000000" />
   <title>مپ دودلی</title>
+
   <link rel="manifest" href="manifest.json" />
+
+  <!-- iOS PWA -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <link rel="apple-touch-icon" href="icon.png" />
+
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="app" class="day-theme">
-    <button id="btn-settings" class="ui-btn ui-gear" title="تنظیمات">⚙️</button>
-    <button id="btn-eraser" class="ui-btn ui-eraser" title="پاک‌کن">🧽</button>
-    <button id="btn-case" class="ui-btn ui-case" title="کیس">📁</button>
 
+    <!-- Fixed circular icon-only controls -->
+    <button id="btn-settings" class="ui-btn ui-gear" aria-label="تنظیمات" title="تنظیمات">
+      <!-- Clear gear SVG -->
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 15a3 3 0 100-6 3 3 0 000 6zm8.5-3a8.35 8.35 0 00-.12-1l2-1.5-1.5-2.6-2.4.5c-.26-.17-.55-.33-.85-.5l-.35-2.4h-3l-.35 2.4c-.3.13-.58.29-.86.47l-2.4-.5-1.5 2.6 2 1.5c-.05.33-.08.66-.08 1s.03.67.08 1l-2 1.5 1.5 2.6 2.4-.5c.28.18.56.34.86.47l.35 2.4h3l.35-2.4c.3-.13.58-.29.85-.5l2.4.5 1.5-2.6-2-1.5c.08-.33.12-.66.12-1z"/>
+      </svg>
+    </button>
+
+    <button id="btn-eraser" class="ui-btn ui-eraser" aria-label="پاک‌کن" title="پاک‌کن">
+      <!-- Rectangular eraser SVG -->
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M3 14.5l8.5-8.5a2 2 0 012.8 0l5.2 5.2a2 2 0 010 2.8L11 20H6.8L3 16.2a2 2 0 010-1.7zM13.7 6.3L6 14l2.8 2.8L16.5 9.1 13.7 6.3zM11 20h8v2h-8z"/>
+      </svg>
+    </button>
+
+    <button id="btn-case" class="ui-btn ui-case" aria-label="کیس" title="کیس">
+      <!-- Folder SVG -->
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10 4l2 2h8a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V6a2 2 0 012-2h6z"/>
+      </svg>
+    </button>
+
+    <!-- Map viewport -->
     <div id="viewport">
       <img id="mapImage" src="map.jpg" alt="MAP" />
       <canvas id="markerCanvas"></canvas>
     </div>
 
+    <!-- Dim overlay -->
     <div id="dim"></div>
 
-    <div id="popup-eraser" class="popup">
-      <button class="popup-close">×</button>
+    <!-- Eraser popup -->
+    <div id="popup-eraser" class="popup" role="dialog" aria-modal="true">
+      <button class="popup-close" aria-label="بستن">✖</button>
       <div class="popup-body">
-        <p>تمام نشان‌ها پاک شوند؟</p>
+        <p class="popup-question">تمام نشان‌ها پاک شوند؟</p>
         <div class="popup-actions">
-          <button data-action="cancel">نه</button>
-          <button data-action="confirm">آره</button>
+          <button class="btn-flat" data-action="cancel">نه</button>
+          <button class="btn-flat" data-action="confirm">آره</button>
         </div>
       </div>
     </div>
 
-    <div id="popup-settings" class="popup">
-      <button class="popup-close">×</button>
+    <!-- Settings popup -->
+    <div id="popup-settings" class="popup" role="dialog" aria-modal="true">
+      <button class="popup-close" aria-label="بستن">✖</button>
       <div class="popup-body">
-        <label>حالت نمایش</label>
-        <div class="segmented">
-          <button class="seg-btn" data-theme="day">روز</button>
-          <button class="seg-btn" data-theme="night">شب</button>
+        <div class="settings-group">
+          <label class="settings-label">حالت نمایش</label>
+          <div class="segmented">
+            <button class="seg-btn" data-theme="day">روز</button>
+            <button class="seg-btn" data-theme="night">شب</button>
+          </div>
         </div>
-        <label>رنگ نشان‌ها</label>
-        <div id="colorRow" class="color-row">
-          <button class="color-chip" data-color="#e53935"></button>
-          <button class="color-chip" data-color="#fb8c00"></button>
-          <button class="color-chip" data-color="#fdd835"></button>
-          <button class="color-chip" data-color="#43a047"></button>
-          <button class="color-chip" data-color="#1e88e5"></button>
-          <button class="color-chip" data-color="#8e24aa"></button>
-          <button class="color-chip" data-color="#e91e63"></button>
+
+        <div class="settings-group">
+          <label class="settings-label">رنگ نشان‌ها</label>
+          <div id="colorRow" class="color-row" role="radiogroup" aria-label="رنگ نشان‌ها">
+            <button class="color-chip" data-color="#e53935" title="قرمز"></button>
+            <button class="color-chip" data-color="#fb8c00" title="نارنجی"></button>
+            <button class="color-chip" data-color="#fdd835" title="زرد"></button>
+            <button class="color-chip" data-color="#43a047" title="سبز"></button>
+            <button class="color-chip" data-color="#1e88e5" title="آبی"></button>
+            <button class="color-chip" data-color="#8e24aa" title="بنفش"></button>
+            <button class="color-chip" data-color="#e91e63" title="صورتی"></button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div id="popup-case" class="popup">
-      <button class="popup-close">×</button>
+    <!-- CASE popup -->
+    <div id="popup-case" class="popup" role="dialog" aria-modal="true">
+      <button class="popup-close" aria-label="بستن">✖</button>
       <div class="popup-body">
         <div class="case-grid">
-          <button class="case-item">سرگرمی</button>
-          <button class="case-item">ماشین</button>
-          <button class="case-item">پختن</button>
-          <button class="case-item">ورزش</button>
-          <button class="case-item">کتاب</button>
-          <button class="case-item">طبیعت</button>
+          <button class="case-item">سرگرمی و تفریح</button>
+          <button class="case-item">تماشای ماشین</button>
+          <button class="case-item">پختن و تهیه</button>
+          <button class="case-item">ورزش و تمرین</button>
+          <button class="case-item">کتاب خواندن</button>
+          <button class="case-item">پیاده روی و قدم زدن</button>
+          <button class="case-item">طبیعت گردی</button>
+          <button class="case-item">بازدید شدن</button>
+          <button class="case-item">کارناوال</button>
+          <button class="case-item">رقص و سیبل</button>
+          <button class="case-item">دزدیدن یا یافتن</button>
+          <button class="case-item">گفتن عاشقانه</button>
+          <button class="case-item">گالری ۱</button>
+          <button class="case-item">گالری ۲</button>
         </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>        </div>
       </div>
     </div>
   </div>
