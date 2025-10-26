@@ -1,69 +1,122 @@
-/* Minimal doodle style with robust night/day themes */
-@font-face {
-  font-family: "DoodleSans";
-  src: local("Comic Sans MS"), local("Segoe Print");
-}
-
 :root {
-  --bg-day: #ffffff;
-  --fg-day: #000000;
-  --bg-night: #000000;
-  --fg-night: #ffffff;
-
-  --ui-line: 2px;
-  --press-depth: 6px;
-  --radius-ui: 16px;
-
-  --shadow-day: 0 6px 0 rgba(0,0,0,0.5);
-  --shadow-night: 0 6px 0 rgba(255,255,255,0.5);
+  --bg-day: #fff;
+  --fg-day: #000;
+  --bg-night: #000;
+  --fg-night: #fff;
 }
 
-* { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; padding: 0; overscroll-behavior: none; }
-body { font-family: "DoodleSans", "Segoe UI", system-ui, sans-serif; }
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: sans-serif;
+}
 
-/* Themes */
-#app.day-theme { background: var(--bg-day); color: var(--fg-day); }
-#app.night-theme { background: var(--bg-night); color: var(--fg-night); }
+#app.day-theme {
+  background: var(--bg-day);
+  color: var(--fg-day);
+}
+#app.night-theme {
+  background: var(--bg-night);
+  color: var(--fg-night);
+}
 
-/* Controls: circular, icon-only */
 .ui-btn {
   position: fixed;
-  width: 56px; height: 56px; border-radius: 50%;
-  border: var(--ui-line) solid currentColor;
-  background: transparent; color: inherit;
-  display: grid; place-items: center;
-  top: 12px; z-index: 10;
-  transition: transform 120ms ease, box-shadow 120ms ease;
-  box-shadow: var(--shadow-day);
-  -webkit-tap-highlight-color: transparent;
+  top: 12px;
+  left: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  z-index: 10;
 }
-#app.night-theme .ui-btn { box-shadow: var(--shadow-night); }
-.ui-btn:active { transform: translateY(var(--press-depth)); box-shadow: none; }
-.ui-btn .icon { width: 24px; height: 24px; fill: currentColor; }
-.ui-gear { left: 12px; }
-.ui-eraser { right: 12px; }
-.ui-case { left: 50%; transform: translateX(-50%); bottom: 16px; top: auto; }
 
-/* Viewport and map */
-#viewport { position: fixed; inset: 0; overflow: hidden; touch-action: none; }
+.icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
 
-/* Container for 4 map tiles */
+#viewport {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
 #mapContainer {
   position: absolute;
-  left: 50%; top: 50%;
+  left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%) scale(1);
   transform-origin: 50% 50%;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-rows: 1fr 1fr;
-  will-change: transform, filter;
-  image-rendering: auto;
+  will-change: transform;
+}
+
+.map-tile {
+  width: 100%;
+  height: auto;
+  display: block;
   user-select: none;
   -webkit-user-drag: none;
 }
 
-/* Individual tiles */
+#app.night-theme #mapContainer {
+  filter: invert(1) hue-rotate(180deg);
+}
+
+#markerCanvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.popup {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: inherit;
+  color: inherit;
+  border: 2px solid currentColor;
+  padding: 16px;
+  border-radius: 12px;
+  display: none;
+  z-index: 20;
+}
+.popup.open {
+  display: block;
+}
+.popup-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+}
+.segmented {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.seg-btn {
+  padding: 8px 12px;
+  border: 1px solid currentColor;
+  background: transparent;
+  border-radius: 8px;
+}
+.seg-btn.active {
+  outline: 2px dashed currentColor;
+}/* Individual tiles */
 .map-tile {
   width: 100%;
   height: auto;
