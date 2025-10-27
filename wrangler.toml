@@ -1,5 +1,10 @@
 name = "micro-macro-crime-city"
-main = "index.html"
 compatibility_date = "2025-10-26"
 
+# فعال‌سازی تله‌متری
 send_metrics = true
+
+# چون پروژه شامل فایل‌های استاتیکه (HTML, CSS, JS)
+# باید به Cloudflare بگیم که این فایل‌ها رو مثل سایت سرو کنه
+[site]
+bucket = "./"
