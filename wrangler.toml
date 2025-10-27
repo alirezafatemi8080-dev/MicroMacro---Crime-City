@@ -6,5 +6,5 @@ send_metrics = true
 
 # چون پروژه شامل فایل‌های استاتیکه (HTML, CSS, JS)
 # باید به Cloudflare بگیم که این فایل‌ها رو مثل سایت سرو کنه
-[site]
+[index.html]
 bucket = "./"
