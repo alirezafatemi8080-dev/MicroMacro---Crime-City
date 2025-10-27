@@ -1,10 +1,10 @@
-name = "micromacrocrimecityweb"
-compatibility_date = "2025-10-26"
+name = "my-static-site"
+type = "javascript"
+main = "index.js"
 
-# فعال‌سازی تله‌متری
-send_metrics = true
-
-# چون پروژه شامل فایل‌های استاتیکه (HTML, CSS, JS)
-# باید به Cloudflare بگیم که این فایل‌ها رو مثل سایت سرو کنه
-[index.html]
+[site]
 bucket = "./"
+entry-point = "workers-site"
+
+[assets]
+directory = "./"
